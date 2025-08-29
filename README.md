@@ -7,7 +7,7 @@ I am seeking funding support for this project to better sustain its development.
 > A powerful tool to route Claude Code requests to different models and customize any request.
 
 > Now you can use models such as `GLM-4.5`, `Kimi-K2`, `Qwen3-Coder-480B-A35B`, and `DeepSeek v3.1` for free through the [iFlow Platform](https://platform.iflow.cn/docs/api-mode).  
-> You can use the `ccr ui` command to directly import the `iflow` template in the UI. It’s worth noting that iFlow limits each user to a concurrency of 1, which means you’ll need to route background requests to other models.  
+> You can use the `npx tsx src/cli.ts ui` command to directly import the `iflow` template in the UI. It’s worth noting that iFlow limits each user to a concurrency of 1, which means you’ll need to route background requests to other models.  
 > If you’d like a better experience, you can try [iFlow CLI](https://cli.iflow.cn).
 
 ![](blog/images/claude-code.png)
@@ -47,7 +47,7 @@ The `config.json` file has several key sections:
 - **`LOG`** (optional): You can enable logging by setting it to `true`. When set to `false`, no log files will be created. Default is `true`.
 - **`LOG_LEVEL`** (optional): Set the logging level. Available options are: `"fatal"`, `"error"`, `"warn"`, `"info"`, `"debug"`, `"trace"`. Default is `"debug"`.
 - **Logging Systems**: The Claude Code Router uses two separate logging systems:
-  - **Server-level logs**: HTTP requests, API calls, and server events are logged using pino in the `~/.claude-code-router/logs/` directory with filenames like `ccr-*.log`
+  - **Server-level logs**: HTTP requests, API calls, and server events are logged using pino in the `~/.claude-code-router/logs/` directory with filenames like `npx tsx src/cli.ts-*.log`
   - **Application-level logs**: Routing decisions and business logic events are logged in `~/.claude-code-router/claude-code-router.log`
 - **`APIKEY`** (optional): You can set a secret key to authenticate requests. When set, clients must provide this key in the `Authorization` header (e.g., `Bearer your-secret-key`) or the `x-api-key` header. Example: `"APIKEY": "your-secret-key"`.
 - **`HOST`** (optional): You can set the host address for the server. If `APIKEY` is not set, the host will be forced to `127.0.0.1` for security reasons to prevent unauthorized access. Example: `"HOST": "0.0.0.0"`.
@@ -201,13 +201,13 @@ Here is a comprehensive example:
 Start Claude Code using the router:
 
 ```shell
-ccr code
+npx tsx src/cli.ts code
 ```
 
 > **Note**: After modifying the configuration file, you need to restart the service for the changes to take effect:
 >
 > ```shell
-> ccr restart
+> npx tsx src/cli.ts restart
 > ```
 
 ### 4. UI Mode
@@ -215,7 +215,7 @@ ccr code
 For a more intuitive experience, you can use the UI mode to manage your configuration:
 
 ```shell
-ccr ui
+npx tsx src/cli.ts ui
 ```
 
 This will open a web-based interface where you can easily view and edit your `config.json` file.
