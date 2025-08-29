@@ -1,0 +1,36 @@
+{
+  "LOG": true,
+  "OPENAI_API_KEY": "",
+  "OPENAI_BASE_URL": "",
+  "OPENAI_MODEL": "",
+  "Providers": [
+    {
+      "name": "qwen-portal",
+      "api_base_url": "https://portal.qwen.ai/v1/chat/completions",
+      "api_key": "",
+      "models": ["qwen3-coder-plus"],
+      "transformer": {
+        "use": [
+          [
+            "maxtoken",
+            {
+              "max_tokens": 65536
+            }
+          ]
+        ],
+        "qwen3-coder-plus": {
+          "use": []
+        }
+      }
+    }
+  ],
+  "Router": {
+    "default": "qwen-portal,qwen3-coder-plus",
+    "background": "qwen-portal,qwen3-coder-plus",
+    "think": "",
+    "longContext": "",
+    "longContextThreshold": 60000,
+    "webSearch": "qwen-portal,qwen3-coder-plus"
+  },
+  "stream": true
+}
