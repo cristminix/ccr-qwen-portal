@@ -1,0 +1,30 @@
+{
+  "LOG": true,
+  "HOST": "127.0.0.1",
+  "PORT": 3000,
+  "APIKEY": "your-api-key-here",
+  "API_TIMEOUT_MS": 600000,
+  "providers": [
+    {
+      "name": "qwen3-coder-plus",
+      "api_base_url": "https://api.example.com/v1/chat/completions",
+      "api_key": "your-qwen-api-key-here",
+      "models": ["qwen3-coder-plus"],
+      "transformer": {
+        "use": ["openai"]
+      }
+    },
+    {
+      "name": "openai",
+      "api_base_url": "https://api.openai.com/v1/chat/completions",
+      "api_key": "your-openai-api-key-here",
+      "models": ["gpt-4", "gpt-3.5-turbo"],
+      "transformer": {
+        "use": ["openai"]
+      }
+    }
+  ],
+  "Router": {
+    "default": "qwen3-coder-plus,qwen3-coder-plus"
+  }
+}

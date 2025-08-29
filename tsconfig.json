@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "outDir": "./dist",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "declaration": true,
+    "typeRoots": ["./src/@types", "./node_modules/@types"],
+    "types": ["node", "@musistudio/llms"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["llms/src/*"],
+      "@anthropic-ai/sdk/resources/messages": ["node_modules/@anthropic-ai/sdk/resources/messages/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "llms/src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
