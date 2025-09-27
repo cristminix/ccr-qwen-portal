@@ -16,6 +16,7 @@ Then, install Claude Code Router:
 pnpm i
 pnpm build
 ./scripts/update-ccr-api-keys.sh
+pnpm start
 ```
 
 ### 2. Configuration
@@ -24,6 +25,6 @@ Create and configure your `~/.custom-claude-code-router/config.json` file. For m
 
 The `config.json` file has several key sections:
 
-- **`PROXY_URL`** (optional): You can set a proxy for API requests, for example: `"PROXY_URL": "http://127.0.0.1:7890"`.
+- **`PROXY_URL`** (optional): You can set a proxy for API requests, for example: `"PROXY_URL": "http://127.0.0.1:4567"`.
 - **`LOG`** (optional): You can enable logging by setting it to `true`. When set to `false`, no log files will be created. Default is `true`.
 - **`LOG_LEVEL`** (optional): Set the logging level. Available options are: `"fatal"`, `"error"`, `"warn"`, `"info"`, `"debug"`, `"trace"`. Default is `"debug"`.
