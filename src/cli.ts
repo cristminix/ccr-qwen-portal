@@ -195,8 +195,9 @@ async function main() {
               Providers: [],
               Router: {},
             })
+            console.log(`Created minimal default configuration file at ~/`)
             console.log(
-              "Created minimal default configuration file at ~/.custom-claude-code-router/config.json"
+              `Created minimal default configuration file at ~/\${require("./constants").HOME_DIR.split(require("node:path").sep).pop()}/config.json`
             )
             console.log("Please edit this file with your actual configuration.")
 

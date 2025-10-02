@@ -1,121 +1,129 @@
-import { Transformer, TransformerConstructor } from "@/types/transformer";
-import { ConfigService } from "./config";
-import Transformers from "@/transformer";
-import Module from "node:module";
+import { Transformer, TransformerConstructor } from "@/types/transformer"
+import { ConfigService } from "./config"
+import Transformers from "@/transformer"
+import Module from "node:module"
 
 interface TransformerConfig {
   transformers: Array<{
-    name: string;
-    type: "class" | "module";
-    path?: string;
-    options?: any;
-  }>;
+    name: string
+    type: "class" | "module"
+    path?: string
+    options?: any
+  }>
 }
 
 export class TransformerService {
   private transformers: Map<string, Transformer | TransformerConstructor> =
-    new Map();
+    new Map()
 
   constructor(
     private readonly configService: ConfigService,
     private readonly logger: any
   ) {}
 
-  registerTransformer(name: string, transformer: Transformer): void {
-    this.transformers.set(name, transformer);
+  registerTransformer(
+    name: string,
+    transformer: Transformer | TransformerConstructor
+  ): void {
+    this.transformers.set(name, transformer)
+    const isConstructor = typeof transformer === "function"
     this.logger.info(
-      `register transformer: ${name}${
-        transformer.endPoint
-          ? ` (endpoint: ${transformer.endPoint})`
-          : " (no endpoint)"
+      `register transformer: ${name} (${
+        isConstructor ? "constructor" : "instance"
+      })${
+        !isConstructor && (transformer as Transformer).endPoint
+          ? ` (endpoint: ${(transformer as Transformer).endPoint})`
+          : ""
       }`
-    );
+    )
   }
 
   getTransformer(
     name: string
   ): Transformer | TransformerConstructor | undefined {
-    return this.transformers.get(name);
+    return this.transformers.get(name)
   }
 
   getAllTransformers(): Map<string, Transformer | TransformerConstructor> {
-    return new Map(this.transformers);
+    return new Map(this.transformers)
   }
 
   getTransformersWithEndpoint(): { name: string; transformer: Transformer }[] {
-    const result: { name: string; transformer: Transformer }[] = [];
+    const result: { name: string; transformer: Transformer }[] = []
 
     this.transformers.forEach((transformer, name) => {
-      if (transformer.endPoint) {
-        result.push({ name, transformer });
+      // Check if it's a Transformer instance (not a constructor)
+      if (typeof transformer === "object" && transformer.endPoint) {
+        result.push({ name, transformer: transformer as Transformer })
       }
-    });
+    })
 
-    return result;
+    return result
   }
 
   getTransformersWithoutEndpoint(): {
-    name: string;
-    transformer: Transformer;
+    name: string
+    transformer: Transformer
   }[] {
-    const result: { name: string; transformer: Transformer }[] = [];
+    const result: { name: string; transformer: Transformer }[] = []
 
     this.transformers.forEach((transformer, name) => {
-      if (!transformer.endPoint) {
-        result.push({ name, transformer });
+      // Check if it's a Transformer instance (not a constructor) and has no endPoint
+      if (typeof transformer === "object" && !transformer.endPoint) {
+        result.push({ name, transformer: transformer as Transformer })
       }
-    });
+    })
 
-    return result;
+    return result
   }
 
   removeTransformer(name: string): boolean {
-    return this.transformers.delete(name);
+    return this.transformers.delete(name)
   }
 
   hasTransformer(name: string): boolean {
-    return this.transformers.has(name);
+    return this.transformers.has(name)
   }
 
   async registerTransformerFromConfig(config: {
-    path?: string;
-    options?: any;
+    path?: string
+    options?: any
   }): Promise<boolean> {
     try {
       if (config.path) {
-        const module = require(require.resolve(config.path));
+        const module = require(require.resolve(config.path))
         if (module) {
-          const instance = new module(config.options);
+          const instance = new module(config.options)
           // Set logger for transformer instance
           if (instance && typeof instance === "object") {
-            (instance as any).logger = this.logger;
+            ;(instance as any).logger = this.logger
           }
           if (!instance.name) {
             throw new Error(
               `Transformer instance from ${config.path} does not have a name property.`
-            );
+            )
           }
-          this.registerTransformer(instance.name, instance);
-          return true;
+          this.registerTransformer(instance.name, instance)
+          return true
         }
       }
-      return false;
+      return false
     } catch (error: any) {
       this.logger.error(
         `load transformer (${config.path}) \nerror: ${error.message}\nstack: ${error.stack}`
-      );
-      return false;
+      )
+      return false
     }
   }
 
   async initialize(): Promise<void> {
     try {
-      await this.registerDefaultTransformersInternal();
-      await this.loadFromConfig();
+      await this.registerDefaultTransformersInternal()
+      await this.loadFromConfig()
     } catch (error: any) {
       this.logger.error(
         `TransformerService init error: ${error.message}\nStack: ${error.stack}`
-      );
+      )
     }
   }
 
@@ -127,37 +135,38 @@ export class TransformerService {
             "TransformerName" in TransformerStatic &&
             typeof TransformerStatic.TransformerName === "string"
           ) {
+            // Register the constructor, not an instance
             this.registerTransformer(
               TransformerStatic.TransformerName,
               TransformerStatic
-            );
+            )
           } else {
-            const transformerInstance = new TransformerStatic();
+            const transformerInstance = new TransformerStatic()
             // Set logger for transformer instance
             if (
               transformerInstance &&
               typeof transformerInstance === "object"
             ) {
-              (transformerInstance as any).logger = this.logger;
+              ;(transformerInstance as any).logger = this.logger
             }
             this.registerTransformer(
               transformerInstance.name!,
               transformerInstance
-            );
+            )
           }
         }
-      );
+      )
     } catch (error) {
-      this.logger.error({ error }, "transformer regist error:");
+      this.logger.error({ error }, "transformer regist error:")
     }
   }
 
   private async loadFromConfig(): Promise<void> {
     const transformers = this.configService.get<
       TransformerConfig["transformers"]
-    >("transformers", []);
+    >("transformers", [])
     for (const transformer of transformers) {
-      await this.registerTransformerFromConfig(transformer);
+      await this.registerTransformerFromConfig(transformer)
     }
   }
 }

@@ -1,59 +1,65 @@
-import { UnifiedChatRequest } from "@/types/llm";
-import { Transformer, TransformerOptions } from "../types/transformer";
+import { UnifiedChatRequest } from "@/types/llm"
+import { Transformer, TransformerOptions } from "../types/transformer"
 
 export class ReasoningTransformer implements Transformer {
-  static TransformerName = "reasoning";
-  enable: any;
+  static TransformerName = "reasoning"
+  enable: any
+  logger?: any
 
   constructor(private readonly options?: TransformerOptions) {
-    this.enable = this.options?.enable ?? true;
+    this.enable = this.options?.enable ?? true
+    this.logger = console
   }
 
   async transformRequestIn(
     request: UnifiedChatRequest
   ): Promise<UnifiedChatRequest> {
     if (!this.enable) {
-      request.thinking = {
+      // Use type assertion to add custom properties
+      ;(request as any).thinking = {
         type: "disabled",
         budget_tokens: -1,
-      };
-      request.enable_thinking = false;
-      return request;
+      }
+      ;(request as any).enable_thinking = false
+      return request
     }
     if (request.reasoning) {
-      request.thinking = {
+      ;(request as any).thinking = {
         type: "enabled",
         budget_tokens: request.reasoning.max_tokens,
-      };
-      request.enable_thinking = true;
+      }
+      ;(request as any).enable_thinking = true
     }
-    return request;
+    return request
   }
 
   async transformResponseOut(response: Response): Promise<Response> {
-    if (!this.enable) return response;
+    if (!this.enable) return response
     if (response.headers.get("Content-Type")?.includes("application/json")) {
-      const jsonResponse = await response.json();
+      const jsonResponse = await response.json()
       // Handle non-streaming response if needed
       return new Response(JSON.stringify(jsonResponse), {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers,
-      });
+      })
     } else if (response.headers.get("Content-Type")?.includes("stream")) {
       if (!response.body) {
-        return response;
+        return response
       }
 
-      const decoder = new TextDecoder();
-      const encoder = new TextEncoder();
-      let reasoningContent = "";
-      let isReasoningComplete = false;
-      let buffer = ""; // Buffer for incomplete data
+      const decoder = new TextDecoder()
+      const encoder = new TextEncoder()
+      let reasoningContent = ""
+      let isReasoningComplete = false
+      let buffer = "" // Buffer for incomplete data
+
+      // Capture logger reference to avoid 'this' context issues in nested functions
+      const logger = this.logger
 
       const stream = new ReadableStream({
         async start(controller) {
-          const reader = response.body!.getReader();
+          const reader = response.body!.getReader()
 
           // Process buffer function
           const processBuffer = (
@@ -61,39 +67,39 @@ export class ReasoningTransformer implements Transformer {
             controller: ReadableStreamDefaultController,
             encoder: TextEncoder
           ) => {
-            const lines = buffer.split("\n");
+            const lines = buffer.split("\n")
             for (const line of lines) {
               if (line.trim()) {
-                controller.enqueue(encoder.encode(line + "\n"));
+                controller.enqueue(encoder.encode(line + "\n"))
               }
             }
-          };
+          }
 
           // Process line function
           const processLine = (
             line: string,
             context: {
-              controller: ReadableStreamDefaultController;
-              encoder: typeof TextEncoder;
-              reasoningContent: () => string;
-              appendReasoningContent: (content: string) => void;
-              isReasoningComplete: () => boolean;
-              setReasoningComplete: (val: boolean) => void;
+              controller: ReadableStreamDefaultController
+              encoder: TextEncoder
+              reasoningContent: () => string
+              appendReasoningContent: (content: string) => void
+              isReasoningComplete: () => boolean
+              setReasoningComplete: (val: boolean) => void
             }
           ) => {
-            const { controller, encoder } = context;
+            const { controller, encoder } = context
 
-            this.logger?.debug({ line }, `Processing reason line`);
+            logger?.debug({ line }, `Processing reason line`)
 
             if (line.startsWith("data: ") && line.trim() !== "data: [DONE]") {
               try {
-                const data = JSON.parse(line.slice(6));
+                const data = JSON.parse(line.slice(6))
 
                 // Extract reasoning_content from delta
                 if (data.choices?.[0]?.delta?.reasoning_content) {
                   context.appendReasoningContent(
                     data.choices[0].delta.reasoning_content
-                  );
+                  )
                   const thinkingChunk = {
                     ...data,
                     choices: [
@@ -107,13 +113,13 @@ export class ReasoningTransformer implements Transformer {
                         },
                       },
                     ],
-                  };
-                  delete thinkingChunk.choices[0].delta.reasoning_content;
+                  }
+                  delete thinkingChunk.choices[0].delta.reasoning_content
                   const thinkingLine = `data: ${JSON.stringify(
                     thinkingChunk
-                  )}\n\n`;
-                  controller.enqueue(encoder.encode(thinkingLine));
-                  return;
+                  )}\n\n`
+                  controller.enqueue(encoder.encode(thinkingLine))
+                  return
                 }
 
                 // Check if reasoning is complete (when delta has content but no reasoning_content)
@@ -123,8 +129,8 @@ export class ReasoningTransformer implements Transformer {
                   context.reasoningContent() &&
                   !context.isReasoningComplete()
                 ) {
-                  context.setReasoningComplete(true);
-                  const signature = Date.now().toString();
+                  context.setReasoningComplete(true)
+                  const signature = Date.now().toString()
 
                   // Create a new chunk with thinking block
                   const thinkingChunk = {
@@ -142,17 +148,17 @@ export class ReasoningTransformer implements Transformer {
                         },
                       },
                     ],
-                  };
-                  delete thinkingChunk.choices[0].delta.reasoning_content;
+                  }
+                  delete thinkingChunk.choices[0].delta.reasoning_content
                   // Send the thinking chunk
                   const thinkingLine = `data: ${JSON.stringify(
                     thinkingChunk
-                  )}\n\n`;
-                  controller.enqueue(encoder.encode(thinkingLine));
+                  )}\n\n`
+                  controller.enqueue(encoder.encode(thinkingLine))
                 }
 
                 if (data.choices?.[0]?.delta?.reasoning_content) {
-                  delete data.choices[0].delta.reasoning_content;
+                  delete data.choices[0].delta.reasoning_content
                 }
 
                 // Send the modified chunk
@@ -161,72 +167,72 @@ export class ReasoningTransformer implements Transformer {
                   Object.keys(data.choices[0].delta).length > 0
                 ) {
                   if (context.isReasoningComplete()) {
-                    data.choices[0].index++;
+                    data.choices[0].index++
                   }
-                  const modifiedLine = `data: ${JSON.stringify(data)}\n\n`;
-                  controller.enqueue(encoder.encode(modifiedLine));
+                  const modifiedLine = `data: ${JSON.stringify(data)}\n\n`
+                  controller.enqueue(encoder.encode(modifiedLine))
                 }
               } catch (e) {
                 // If JSON parsing fails, pass through the original line
-                controller.enqueue(encoder.encode(line + "\n"));
+                controller.enqueue(encoder.encode(line + "\n"))
               }
             } else {
               // Pass through non-data lines (like [DONE])
-              controller.enqueue(encoder.encode(line + "\n"));
+              controller.enqueue(encoder.encode(line + "\n"))
             }
-          };
+          }
 
           try {
             while (true) {
-              const { done, value } = await reader.read();
+              const { done, value } = await reader.read()
               if (done) {
                 // Process remaining data in buffer
                 if (buffer.trim()) {
-                  processBuffer(buffer, controller, encoder);
+                  processBuffer(buffer, controller, encoder)
                 }
-                break;
+                break
               }
 
-              const chunk = decoder.decode(value, { stream: true });
-              buffer += chunk;
+              const chunk = decoder.decode(value, { stream: true })
+              buffer += chunk
 
               // Process complete lines from buffer
-              const lines = buffer.split("\n");
-              buffer = lines.pop() || ""; // Keep incomplete line in buffer
+              const lines = buffer.split("\n")
+              buffer = lines.pop() || "" // Keep incomplete line in buffer
 
               for (const line of lines) {
-                if (!line.trim()) continue;
+                if (!line.trim()) continue
 
                 try {
                   processLine(line, {
                     controller,
-                    encoder: encoder,
+                    encoder,
                     reasoningContent: () => reasoningContent,
                     appendReasoningContent: (content) =>
                       (reasoningContent += content),
                     isReasoningComplete: () => isReasoningComplete,
                     setReasoningComplete: (val) => (isReasoningComplete = val),
-                  });
+                  })
                 } catch (error) {
-                  console.error("Error processing line:", line, error);
+                  console.error("Error processing line:", line, error)
                   // Pass through original line if parsing fails
-                  controller.enqueue(encoder.encode(line + "\n"));
+                  controller.enqueue(encoder.encode(line + "\n"))
                 }
               }
             }
           } catch (error) {
-            console.error("Stream error:", error);
-            controller.error(error);
+            console.error("Stream error:", error)
+            controller.error(error)
           } finally {
             try {
-              reader.releaseLock();
+              reader.releaseLock()
             } catch (e) {
-              console.error("Error releasing reader lock:", e);
+              console.error("Error releasing reader lock:", e)
             }
-            controller.close();
+            controller.close()
           }
         },
-      });
+      })
 
       return new Response(stream, {
         status: response.status,
@@ -236,9 +242,9 @@ export class ReasoningTransformer implements Transformer {
           "Cache-Control": "no-cache",
           Connection: "keep-alive",
         },
-      });
+      })
     }
 
-    return response;
+    return response
   }
 }

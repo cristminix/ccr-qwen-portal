@@ -14,6 +14,9 @@ import { configureLogging } from "./utils/log"
 import { sessionUsageCache } from "./utils/cache"
 import Stream from "node:stream"
 
+// Load environment variables from .env file
+require("dotenv").config()
+
 async function initializeClaudeConfig() {
   const homeDir = homedir()
   const configPath = join(homeDir, ".claude.json")
@@ -61,7 +64,7 @@ async function run(options: RunOptions = {}) {
     console.warn("⚠️ API key is not set. HOST is forced to 127.0.0.1.")
   }
 
-  const port = config.PORT || 4567
+  const port = config.PORT || parseInt(process.env.DEFAULT_PORT || "4567", 10)
 
   // Save the PID of the background process
   savePid(process.pid)
@@ -102,8 +105,8 @@ async function run(options: RunOptions = {}) {
   const server = createServer({
     jsonPath: CONFIG_FILE,
     initialConfig: {
-      // ...config,
-      providers: config.Providers || config.providers,
+      // Don't override providers/Providers here, let it load from JSON config
+      // providers: config.Providers || config.providers,
       HOST: HOST,
       PORT: servicePort,
       LOG_FILE: join(

@@ -1,15 +1,16 @@
-import { LLMProvider, UnifiedChatRequest } from "../types/llm";
-import { Transformer } from "../types/transformer";
+import { LLMProvider, UnifiedChatRequest } from "../types/llm"
+import { Transformer } from "../types/transformer"
 import {
   buildRequestBody,
   transformRequestOut,
   transformResponseOut,
-} from "../utils/gemini.util";
+} from "../utils/gemini.util"
 
 export class GeminiTransformer implements Transformer {
-  name = "gemini";
+  name = "gemini"
+  logger?: any
 
-  endPoint = "/v1beta/models/:modelAndAction";
+  endPoint = "/v1beta/models/:modelAndAction"
 
   async transformRequestIn(
     request: UnifiedChatRequest,
@@ -29,12 +30,14 @@ export class GeminiTransformer implements Transformer {
           Authorization: undefined,
         },
       },
-    };
+    }
   }
 
-  transformRequestOut = transformRequestOut;
+  async transformRequestOut(request: any): Promise<UnifiedChatRequest> {
+    return transformRequestOut(request)
+  }
 
   async transformResponseOut(response: Response): Promise<Response> {
-    return transformResponseOut(response, this.name, this.logger);
+    return transformResponseOut(response, this.name, this.logger)
   }
 }

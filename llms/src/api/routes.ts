@@ -7,7 +7,7 @@ import {
 import { RegisterProviderRequest, LLMProvider } from "@/types/llm"
 import { sendUnifiedRequest } from "@/utils/request"
 import { createApiError } from "./middleware"
-import { version } from "../../package.json"
+import { version } from "../../../package.json"
 
 /**
  * 处理transformer端点的主函数
@@ -32,6 +32,12 @@ async function handleTransformerEndpoint(
   // 验证提供者是否存在
   if (!provider) {
     console.log("Provider not found:", providerName)
+    // just log available providers
+    console.log(
+      "Available providers:",
+      fastify._server!.providerService.getProviders()
+    )
+
     throw createApiError(
       `Provider '${providerName}' not found`,
       404,

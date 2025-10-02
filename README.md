@@ -1,6 +1,5 @@
 # A Fork of Claude Code Router
 
-
 ## 🚀 Getting Started
 
 ### 1. Installation
@@ -21,7 +20,7 @@ pnpm start
 
 ### 2. Configuration
 
-Create and configure your `~/.custom-claude-code-router/config.json` file. For more details, you can refer to `config.example.json`.
+Create and configure your `~/${CONFIG_DIR:-.ccr}/config.json` file. For more details, you can refer to `config.example.json`.
 
 The `config.json` file has several key sections:
 

@@ -73,8 +73,18 @@ function Update-ConfigFile {
     [string]$newKey
   )
 
-  $jsonText = Get-Content $configFile -Raw
-  $jsonObj = $jsonText | ConvertFrom-Json
+  # Check if config file exists, create it if it doesn't
+  if (-not (Test-Path $configFile)) {
+    $jsonObj = @{
+      Providers = @()
+      Router = @{}
+    }
+    $jsonObj | ConvertTo-Json -Depth 10 | Set-Content $configFile -Encoding UTF8
+    Write-Host "Created config file: $configFile"
+  } else {
+    $jsonText = Get-Content $configFile -Raw
+    $jsonObj = $jsonText | ConvertFrom-Json
+  }
 
   $oldKey = $null
   foreach ($provider in $jsonObj.Providers) {
@@ -85,6 +95,20 @@ function Update-ConfigFile {
     }
   }
 
+  # If no qwen-portal provider was found, create one
+  if ($null -eq $oldKey) {
+    $newProvider = @{
+      name = "qwen-portal"
+      api_key = $newKey
+    }
+    if ($null -eq $jsonObj.Providers) {
+      $jsonObj | Add-Member -NotePropertyName "Providers" -NotePropertyValue @($newProvider)
+    } else {
+      $jsonObj.Providers += $newProvider
+    }
+    $oldKey = ""
+  }
+
   # Save updated config back
   $jsonObj | ConvertTo-Json -Depth 10 | Set-Content $configFile -Encoding UTF8
 
@@ -93,8 +117,21 @@ function Update-ConfigFile {
 }
 
 
+# Load CONFIG_DIR from .env if it exists
+$configDirValue = ".ccr"
+$envFile = Join-Path (Get-Location) ".env"
+if (Test-Path $envFile) {
+    $envContent = Get-Content $envFile
+    foreach ($line in $envContent) {
+        if ($line -match "^CONFIG_DIR=(.*)") {
+            $configDirValue = $matches[1]
+            break
+        }
+    }
+}
+
 $config1 = Join-Path $HOME ".claude-code-router/config.json"
-$config2 = Join-Path $HOME ".custom-claude-code-router/config.json"
+$config2 = Join-Path $HOME "$configDirValue/config.json"
 
 # Fungsi untuk memastikan direktori dan file konfigurasi ada
 function Ensure-ConfigFile {
@@ -128,8 +165,16 @@ function Ensure-ConfigFile {
 Ensure-ConfigFile -configFile $config1
 Ensure-ConfigFile -configFile $config2
 
+# Buat file konfigurasi untuk direktori .ccr jika belum ada
+$config3 = Join-Path $HOME "${env:CONFIG_DIR:-.ccr}/config.json"
+Ensure-ConfigFile -configFile $config3
+
 $oldKey = Update-ConfigFile -configFile $config1 -newKey $accessToken
 $null = Update-ConfigFile -configFile $config2 -newKey $accessToken
+
+# Update config file in the directory specified by CONFIG_DIR (or .ccr as fallback)
+$config3 = Join-Path $HOME "${env:CONFIG_DIR:-.ccr}/config.json"
+$null = Update-ConfigFile -configFile $config3 -newKey $accessToken
 ################################################################################
 # 7. Echo the change
 ################################################################################

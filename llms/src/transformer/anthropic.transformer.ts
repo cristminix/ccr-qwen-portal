@@ -1,5 +1,5 @@
-import { ChatCompletion } from "openai/resources"
 import {
+  ChatCompletion,
   LLMProvider,
   UnifiedChatRequest,
   UnifiedMessage,
@@ -919,7 +919,7 @@ export class AnthropicTransformer implements Transformer {
         content.push({
           type: "web_search_tool_result",
           tool_use_id: id,
-          content: choice.message.annotations.map((item) => {
+          content: choice.message.annotations.map((item: any) => {
             return {
               type: "web_search_result",
               url: item.url_citation.url,
@@ -941,7 +941,7 @@ export class AnthropicTransformer implements Transformer {
         }
       }
       if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
-        choice.message.tool_calls.forEach((toolCall: any, index) => {
+        choice.message.tool_calls.forEach((toolCall: any, index: number) => {
           let parsedInput = {}
           try {
             const argumentsStr = toolCall.function?.arguments || "{}"

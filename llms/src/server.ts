@@ -81,14 +81,16 @@ class Server {
       this.configService,
       this.app.log
     )
-    this.transformerService.initialize().finally(() => {
-      this.providerService = new ProviderService(
-        this.configService,
-        this.transformerService,
-        this.app.log
-      )
-      this.llmService = new LLMService(this.providerService)
-    })
+  }
+
+  private async initializeServices(): Promise<void> {
+    await this.transformerService.initialize()
+    this.providerService = new ProviderService(
+      this.configService,
+      this.transformerService,
+      this.app.log
+    )
+    this.llmService = new LLMService(this.providerService)
   }
 
   // Type-safe register method using Fastify native types
@@ -126,7 +128,25 @@ class Server {
 
   async start(): Promise<void> {
     try {
+      // Initialize services first
+      await this.initializeServices()
+
+      console.log("=== SERVER START ===")
+      console.log(
+        "ProviderService instance:",
+        this.providerService ? "EXISTS" : "NULL"
+      )
+      console.log(
+        "Providers count:",
+        this.providerService?.getProviders().length
+      )
+
       this.app._server = this
+
+      console.log(
+        "fastify._server set to:",
+        this.app._server ? "THIS SERVER INSTANCE" : "NULL"
+      )
 
       this.app.addHook("preHandler", (request, reply, done) => {
         if (request.url.startsWith("/v1/messages") && request.body) {

@@ -27,8 +27,28 @@ echo "Updated $CONFIG_FILE"
 ################################################################################
 # 4–6. Replace the api_key inside the qwen-portal provider block
 ################################################################################
-CONFIG_FILE="$HOME/.custom-claude-code-router/config.json"
+# Load CONFIG_DIR from .env if it exists, otherwise use default
+if [ -f .env ]; then
+    # Source the .env file to load CONFIG_DIR variable
+    export $(grep -E '^CONFIG_DIR=' .env | xargs)
+fi
+
+CONFIG_FILE="$HOME/${CONFIG_DIR:-.ccr}/config.json"
 TMP_FILE="${CONFIG_FILE}.tmp"
+
+# Create directory if it doesn't exist
+mkdir -p "$(dirname "$CONFIG_FILE")"
+
+# Check if config file exists, create it if it doesn't
+if [ ! -f "$CONFIG_FILE" ]; then
+    if [ -f "config.example.json" ]; then
+        cp config.example.json "$CONFIG_FILE"
+    else
+        echo '{}' > "$CONFIG_FILE"
+    fi
+    echo "Created config file: $CONFIG_FILE"
+fi
+
 # Pull the old value for logging
 OLD_KEY=$(jq -r '.Providers[] | select(.name == "qwen-portal").api_key' "$CONFIG_FILE")
 # ----- in-place key replacement -----

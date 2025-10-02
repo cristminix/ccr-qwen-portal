@@ -1,16 +1,16 @@
-import { UnifiedChatRequest, UnifiedMessage } from "../types/llm";
-import { Content, ContentListUnion, Part, ToolListUnion } from "@google/genai";
+import { UnifiedChatRequest, UnifiedMessage } from "../types/llm"
+import { Content, ContentListUnion, Part, ToolListUnion } from "@google/genai"
 
 export function cleanupParameters(obj: any, keyName?: string): void {
   if (!obj || typeof obj !== "object") {
-    return;
+    return
   }
 
   if (Array.isArray(obj)) {
     obj.forEach((item) => {
-      cleanupParameters(item);
-    });
-    return;
+      cleanupParameters(item)
+    })
+    return
   }
 
   const validFields = new Set([
@@ -36,18 +36,18 @@ export function cleanupParameters(obj: any, keyName?: string): void {
     "items",
     "minimum",
     "maximum",
-  ]);
+  ])
 
   if (keyName !== "properties") {
     Object.keys(obj).forEach((key) => {
       if (!validFields.has(key)) {
-        delete obj[key];
+        delete obj[key]
       }
-    });
+    })
   }
 
   if (obj.enum && obj.type !== "string") {
-    delete obj.enum;
+    delete obj.enum
   }
 
   if (
@@ -55,12 +55,12 @@ export function cleanupParameters(obj: any, keyName?: string): void {
     obj.format &&
     !["enum", "date-time"].includes(obj.format)
   ) {
-    delete obj.format;
+    delete obj.format
   }
 
   Object.keys(obj).forEach((key) => {
-    cleanupParameters(obj[key], key);
-  });
+    cleanupParameters(obj[key], key)
+  })
 }
 
 // Type enum equivalent in JavaScript
@@ -73,33 +73,36 @@ const Type = {
   ARRAY: "ARRAY",
   OBJECT: "OBJECT",
   NULL: "NULL",
-};
+}
 
 /**
  * Transform the type field from an array of types to an array of anyOf fields.
  * @param {string[]} typeList - List of types
  * @param {Object} resultingSchema - The schema object to modify
  */
-function flattenTypeArrayToAnyOf(typeList: Array<string>, resultingSchema: any): void {
+function flattenTypeArrayToAnyOf(
+  typeList: Array<string>,
+  resultingSchema: any
+): void {
   if (typeList.includes("null")) {
-    resultingSchema["nullable"] = true;
+    resultingSchema["nullable"] = true
   }
-  const listWithoutNull = typeList.filter((type) => type !== "null");
+  const listWithoutNull = typeList.filter((type) => type !== "null")
 
   if (listWithoutNull.length === 1) {
-    const upperCaseType = listWithoutNull[0].toUpperCase();
+    const upperCaseType = listWithoutNull[0].toUpperCase()
     resultingSchema["type"] = Object.values(Type).includes(upperCaseType)
       ? upperCaseType
-      : Type.TYPE_UNSPECIFIED;
+      : Type.TYPE_UNSPECIFIED
   } else {
-    resultingSchema["anyOf"] = [];
+    resultingSchema["anyOf"] = []
     for (const i of listWithoutNull) {
-      const upperCaseType = i.toUpperCase();
+      const upperCaseType = i.toUpperCase()
       resultingSchema["anyOf"].push({
         type: Object.values(Type).includes(upperCaseType)
           ? upperCaseType
           : Type.TYPE_UNSPECIFIED,
-      });
+      })
     }
   }
 }
@@ -110,13 +113,13 @@ function flattenTypeArrayToAnyOf(typeList: Array<string>, resultingSchema: any):
  * @returns {Object} - The processed schema
  */
 function processJsonSchema(_jsonSchema: any): any {
-  const genAISchema = {};
-  const schemaFieldNames = ["items"];
-  const listSchemaFieldNames = ["anyOf"];
-  const dictSchemaFieldNames = ["properties"];
+  const genAISchema: any = {}
+  const schemaFieldNames = ["items"]
+  const listSchemaFieldNames = ["anyOf"]
+  const dictSchemaFieldNames = ["properties"]
 
   if (_jsonSchema["type"] && _jsonSchema["anyOf"]) {
-    throw new Error("type and anyOf cannot be both populated.");
+    throw new Error("type and anyOf cannot be both populated.")
   }
 
   /*
@@ -128,73 +131,73 @@ function processJsonSchema(_jsonSchema: any): any {
   _jsonSchema for processing. This is because the backend doesn't have a null
   type.
   */
-  const incomingAnyOf = _jsonSchema["anyOf"];
+  const incomingAnyOf = _jsonSchema["anyOf"]
   if (
     incomingAnyOf != null &&
     Array.isArray(incomingAnyOf) &&
     incomingAnyOf.length == 2
   ) {
     if (incomingAnyOf[0] && incomingAnyOf[0]["type"] === "null") {
-      genAISchema["nullable"] = true;
-      _jsonSchema = incomingAnyOf[1];
+      genAISchema["nullable"] = true
+      _jsonSchema = incomingAnyOf[1]
     } else if (incomingAnyOf[1] && incomingAnyOf[1]["type"] === "null") {
-      genAISchema["nullable"] = true;
-      _jsonSchema = incomingAnyOf[0];
+      genAISchema["nullable"] = true
+      _jsonSchema = incomingAnyOf[0]
     }
   }
 
   if (_jsonSchema["type"] && Array.isArray(_jsonSchema["type"])) {
-    flattenTypeArrayToAnyOf(_jsonSchema["type"], genAISchema);
+    flattenTypeArrayToAnyOf(_jsonSchema["type"], genAISchema)
   }
 
   for (const [fieldName, fieldValue] of Object.entries(_jsonSchema)) {
     // Skip if the fieldValue is undefined or null.
     if (fieldValue == null) {
-      continue;
+      continue
     }
 
     if (fieldName == "type") {
       if (fieldValue === "null") {
         throw new Error(
           "type: null can not be the only possible type for the field."
-        );
+        )
       }
       if (Array.isArray(fieldValue)) {
         // we have already handled the type field with array of types in the
         // beginning of this function.
-        continue;
+        continue
       }
-      const upperCaseValue = fieldValue.toUpperCase();
+      const upperCaseValue = (fieldValue as string).toUpperCase()
       genAISchema["type"] = Object.values(Type).includes(upperCaseValue)
         ? upperCaseValue
-        : Type.TYPE_UNSPECIFIED;
+        : Type.TYPE_UNSPECIFIED
     } else if (schemaFieldNames.includes(fieldName)) {
-      genAISchema[fieldName] = processJsonSchema(fieldValue);
+      genAISchema[fieldName] = processJsonSchema(fieldValue)
     } else if (listSchemaFieldNames.includes(fieldName)) {
-      const listSchemaFieldValue = [];
-      for (const item of fieldValue) {
+      const listSchemaFieldValue: any[] = []
+      for (const item of fieldValue as any[]) {
         if (item["type"] == "null") {
-          genAISchema["nullable"] = true;
-          continue;
+          genAISchema["nullable"] = true
+          continue
         }
-        listSchemaFieldValue.push(processJsonSchema(item));
+        listSchemaFieldValue.push(processJsonSchema(item))
       }
-      genAISchema[fieldName] = listSchemaFieldValue;
+      genAISchema[fieldName] = listSchemaFieldValue
     } else if (dictSchemaFieldNames.includes(fieldName)) {
-      const dictSchemaFieldValue = {};
+      const dictSchemaFieldValue: any = {}
       for (const [key, value] of Object.entries(fieldValue)) {
-        dictSchemaFieldValue[key] = processJsonSchema(value);
+        dictSchemaFieldValue[key] = processJsonSchema(value)
       }
-      genAISchema[fieldName] = dictSchemaFieldValue;
+      genAISchema[fieldName] = dictSchemaFieldValue
     } else {
       // additionalProperties is not included in JSONSchema, skipping it.
       if (fieldName === "additionalProperties") {
-        continue;
+        continue
       }
-      genAISchema[fieldName] = fieldValue;
+      genAISchema[fieldName] = fieldValue
     }
   }
-  return genAISchema;
+  return genAISchema
 }
 
 /**
@@ -209,12 +212,12 @@ export function tTool(tool: any): any {
         if (!Object.keys(functionDeclaration.parameters).includes("$schema")) {
           functionDeclaration.parameters = processJsonSchema(
             functionDeclaration.parameters
-          );
+          )
         } else {
           if (!functionDeclaration.parametersJsonSchema) {
             functionDeclaration.parametersJsonSchema =
-              functionDeclaration.parameters;
-            delete functionDeclaration.parameters;
+              functionDeclaration.parameters
+            delete functionDeclaration.parameters
           }
         }
       }
@@ -222,24 +225,24 @@ export function tTool(tool: any): any {
         if (!Object.keys(functionDeclaration.response).includes("$schema")) {
           functionDeclaration.response = processJsonSchema(
             functionDeclaration.response
-          );
+          )
         } else {
           if (!functionDeclaration.responseJsonSchema) {
             functionDeclaration.responseJsonSchema =
-              functionDeclaration.response;
-            delete functionDeclaration.response;
+              functionDeclaration.response
+            delete functionDeclaration.response
           }
         }
       }
     }
   }
-  return tool;
+  return tool
 }
 
 export function buildRequestBody(
   request: UnifiedChatRequest
 ): Record<string, any> {
-  const tools = [];
+  const tools = []
   const functionDeclarations = request.tools
     ?.filter((tool) => tool.function.name !== "web_search")
     ?.map((tool) => {
@@ -247,45 +250,45 @@ export function buildRequestBody(
         name: tool.function.name,
         description: tool.function.description,
         parametersJsonSchema: tool.function.parameters,
-      };
-    });
+      }
+    })
   if (functionDeclarations?.length) {
     tools.push(
       tTool({
         functionDeclarations,
       })
-    );
+    )
   }
   const webSearch = request.tools?.find(
     (tool) => tool.function.name === "web_search"
-  );
+  )
   if (webSearch) {
     tools.push({
       googleSearch: {},
-    });
+    })
   }
 
   const contents = request.messages.map((message: UnifiedMessage) => {
-    let role: "user" | "model";
+    let role: "user" | "model"
     if (message.role === "assistant") {
-      role = "model";
+      role = "model"
     } else if (["user", "system", "tool"].includes(message.role)) {
-      role = "user";
+      role = "user"
     } else {
-      role = "user"; // Default to user if role is not recognized
+      role = "user" // Default to user if role is not recognized
     }
-    const parts = [];
+    const parts = []
     if (typeof message.content === "string") {
       parts.push({
         text: message.content,
-      });
+      })
     } else if (Array.isArray(message.content)) {
       parts.push(
         ...message.content.map((content) => {
           if (content.type === "text") {
             return {
               text: content.text || "",
-            };
+            }
           }
           if (content.type === "image_url") {
             if (content.image_url.url.startsWith("http")) {
@@ -294,18 +297,18 @@ export function buildRequestBody(
                   mime_type: content.media_type,
                   file_uri: content.image_url.url,
                 },
-              };
+              }
             } else {
               return {
                 inlineData: {
                   mime_type: content.media_type,
                   data: content.image_url.url,
                 },
-              };
+              }
             }
           }
         })
-      );
+      )
     }
 
     if (Array.isArray(message.tool_calls)) {
@@ -319,53 +322,56 @@ export function buildRequestBody(
               name: toolCall.function.name,
               args: JSON.parse(toolCall.function.arguments || "{}"),
             },
-          };
+          }
         })
-      );
+      )
     }
     return {
       role,
       parts,
-    };
-  });
+    }
+  })
 
   const body = {
     contents,
     tools: tools.length ? tools : undefined,
-  };
-
-  if (request.tool_choice) {
-    const toolConfig = {
-      functionCallingConfig: {},
-    };
-    if (request.tool_choice === "auto") {
-      toolConfig.functionCallingConfig.mode = "auto";
-    } else if (request.tool_choice === "none") {
-      toolConfig.functionCallingConfig.mode = "none";
-    } else if (request.tool_choice === "required") {
-      toolConfig.functionCallingConfig.mode = "any";
-    } else if (request.tool_choice?.function?.name) {
-      toolConfig.functionCallingConfig.mode = "any";
-      toolConfig.functionCallingConfig.allowedFunctionNames = [
-        request.tool_choice?.function?.name,
-      ];
-    }
-    body.toolConfig = toolConfig;
   }
 
-  return body;
+  if (request.tool_choice) {
+    const toolConfig: any = {
+      functionCallingConfig: {},
+    }
+    if (request.tool_choice === "auto") {
+      toolConfig.functionCallingConfig.mode = "auto"
+    } else if (request.tool_choice === "none") {
+      toolConfig.functionCallingConfig.mode = "none"
+    } else if (request.tool_choice === "required") {
+      toolConfig.functionCallingConfig.mode = "any"
+    } else if (
+      typeof request.tool_choice === "object" &&
+      request.tool_choice?.function?.name
+    ) {
+      toolConfig.functionCallingConfig.mode = "any"
+      toolConfig.functionCallingConfig.allowedFunctionNames = [
+        request.tool_choice.function.name,
+      ]
+    }
+    ;(body as any).toolConfig = toolConfig
+  }
+
+  return body
 }
 
 export function transformRequestOut(
   request: Record<string, any>
 ): UnifiedChatRequest {
-  const contents: ContentListUnion = request.contents;
-  const tools: ToolListUnion = request.tools;
-  const model: string = request.model;
-  const max_tokens: number | undefined = request.max_tokens;
-  const temperature: number | undefined = request.temperature;
-  const stream: boolean | undefined = request.stream;
-  const tool_choice: "auto" | "none" | string | undefined = request.tool_choice;
+  const contents: ContentListUnion = request.contents
+  const tools: ToolListUnion = request.tools
+  const model: string = request.model
+  const max_tokens: number | undefined = request.max_tokens
+  const temperature: number | undefined = request.temperature
+  const stream: boolean | undefined = request.stream
+  const tool_choice: "auto" | "none" | string | undefined = request.tool_choice
 
   const unifiedChatRequest: UnifiedChatRequest = {
     messages: [],
@@ -374,7 +380,7 @@ export function transformRequestOut(
     temperature,
     stream,
     tool_choice,
-  };
+  }
 
   if (Array.isArray(contents)) {
     contents.forEach((content) => {
@@ -382,12 +388,12 @@ export function transformRequestOut(
         unifiedChatRequest.messages.push({
           role: "user",
           content,
-        });
+        })
       } else if (typeof (content as Part).text === "string") {
         unifiedChatRequest.messages.push({
           role: "user",
           content: (content as Part).text || null,
-        });
+        })
       } else if ((content as Content).role === "user") {
         unifiedChatRequest.messages.push({
           role: "user",
@@ -396,7 +402,7 @@ export function transformRequestOut(
               type: "text",
               text: part.text || "",
             })) || [],
-        });
+        })
       } else if ((content as Content).role === "model") {
         unifiedChatRequest.messages.push({
           role: "assistant",
@@ -405,16 +411,16 @@ export function transformRequestOut(
               type: "text",
               text: part.text || "",
             })) || [],
-        });
+        })
       }
-    });
+    })
   }
 
   if (Array.isArray(tools)) {
-    unifiedChatRequest.tools = [];
+    unifiedChatRequest.tools = []
     tools.forEach((tool) => {
-      if (Array.isArray(tool.functionDeclarations)) {
-        tool.functionDeclarations.forEach((tool) => {
+      if (Array.isArray((tool as any).functionDeclarations)) {
+        ;(tool as any).functionDeclarations.forEach((tool: any) => {
           unifiedChatRequest.tools!.push({
             type: "function",
             function: {
@@ -422,13 +428,13 @@ export function transformRequestOut(
               description: tool.description,
               parameters: tool.parameters,
             },
-          });
-        });
+          })
+        })
       }
-    });
+    })
   }
 
-  return unifiedChatRequest;
+  return unifiedChatRequest
 }
 
 export async function transformResponseOut(
@@ -437,7 +443,7 @@ export async function transformResponseOut(
   logger?: any
 ): Promise<Response> {
   if (response.headers.get("Content-Type")?.includes("application/json")) {
-    const jsonResponse: any = await response.json();
+    const jsonResponse: any = await response.json()
     const tool_calls =
       jsonResponse.candidates[0].content?.parts
         ?.filter((part: Part) => part.functionCall)
@@ -450,7 +456,7 @@ export async function transformResponseOut(
             name: part.functionCall?.name,
             arguments: JSON.stringify(part.functionCall?.args || {}),
           },
-        })) || [];
+        })) || []
     const res = {
       id: jsonResponse.responseId,
       choices: [
@@ -481,39 +487,39 @@ export async function transformResponseOut(
           jsonResponse.usageMetadata.cachedContentTokenCount || null,
         total_tokens: jsonResponse.usageMetadata.totalTokenCount,
       },
-    };
+    }
     return new Response(JSON.stringify(res), {
       status: response.status,
       statusText: response.statusText,
       headers: response.headers,
-    });
+    })
   } else if (response.headers.get("Content-Type")?.includes("stream")) {
     if (!response.body) {
-      return response;
+      return response
     }
 
-    const decoder = new TextDecoder();
-    const encoder = new TextEncoder();
+    const decoder = new TextDecoder()
+    const encoder = new TextEncoder()
 
     const processLine = (
       line: string,
       controller: ReadableStreamDefaultController
     ) => {
       if (line.startsWith("data: ")) {
-        const chunkStr = line.slice(6).trim();
+        const chunkStr = line.slice(6).trim()
         if (chunkStr) {
-          logger?.debug({ chunkStr }, `${providerName} chunk:`);
+          logger?.debug({ chunkStr }, `${providerName} chunk:`)
           try {
-            const chunk = JSON.parse(chunkStr);
+            const chunk = JSON.parse(chunkStr)
 
             // Check if chunk has valid structure
             if (!chunk.candidates || !chunk.candidates[0]) {
-              log(`Invalid chunk structure:`, chunkStr);
-              return;
+              console.log(`Invalid chunk structure:`, chunkStr)
+              return
             }
 
-            const candidate = chunk.candidates[0];
-            const parts = candidate.content?.parts || [];
+            const candidate = chunk.candidates[0]
+            const parts = candidate.content?.parts || []
 
             const tool_calls = parts
               .filter((part: Part) => part.functionCall)
@@ -526,14 +532,14 @@ export async function transformResponseOut(
                   name: part.functionCall?.name,
                   arguments: JSON.stringify(part.functionCall?.args || {}),
                 },
-              }));
+              }))
 
             const textContent = parts
               .filter((part: Part) => part.text)
               .map((part: Part) => part.text)
-              .join("\n");
+              .join("\n")
 
-            const res = {
+            const res: any = {
               choices: [
                 {
                   delta: {
@@ -559,15 +565,16 @@ export async function transformResponseOut(
                   chunk.usageMetadata?.cachedContentTokenCount || null,
                 total_tokens: chunk.usageMetadata?.totalTokenCount || 0,
               },
-            };
+            }
             if (candidate?.groundingMetadata?.groundingChunks?.length) {
               res.choices[0].delta.annotations =
                 candidate.groundingMetadata.groundingChunks.map(
-                  (groundingChunk, index) => {
+                  (groundingChunk: any, index: number) => {
                     const support =
                       candidate?.groundingMetadata?.groundingSupports?.filter(
-                        (item) => item.groundingChunkIndices?.includes(index)
-                      );
+                        (item: any) =>
+                          item.groundingChunkIndices?.includes(index)
+                      )
                     return {
                       type: "url_citation",
                       url_citation: {
@@ -577,60 +584,60 @@ export async function transformResponseOut(
                         start_index: support?.[0]?.segment?.startIndex || 0,
                         end_index: support?.[0]?.segment?.endIndex || 0,
                       },
-                    };
+                    }
                   }
-                );
+                )
             }
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify(res)}\n\n`)
-            );
+            )
           } catch (error: any) {
             logger?.error(
               `Error parsing ${providerName} stream chunk`,
               chunkStr,
               error.message
-            );
+            )
           }
         }
       }
-    };
+    }
 
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = response.body!.getReader();
-        let buffer = "";
+        const reader = response.body!.getReader()
+        let buffer = ""
         try {
           while (true) {
-            const { done, value } = await reader.read();
+            const { done, value } = await reader.read()
             if (done) {
               if (buffer) {
-                processLine(buffer, controller);
+                processLine(buffer, controller)
               }
-              break;
+              break
             }
 
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split("\n")
 
-            buffer = lines.pop() || "";
+            buffer = lines.pop() || ""
 
             for (const line of lines) {
-              processLine(line, controller);
+              processLine(line, controller)
             }
           }
         } catch (error) {
-          controller.error(error);
+          controller.error(error)
         } finally {
-          controller.close();
+          controller.close()
         }
       },
-    });
+    })
 
     return new Response(stream, {
       status: response.status,
       statusText: response.statusText,
       headers: response.headers,
-    });
+    })
   }
-  return response;
+  return response
 }
