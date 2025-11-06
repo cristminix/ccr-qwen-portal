@@ -92,8 +92,7 @@ async function run(options: RunOptions = {}) {
           level: config.LOG_LEVEL || "debug",
           stream: createWriteStream({
             path: CONFIG_DIR,
-            filename:
-              config.LOGNAME || `${CONFIG_DIR}/logs/-${+new Date()}.log`,
+            filename: config.LOGNAME || `logs/${+new Date()}.log`,
             maxFiles: 3,
             interval: "1d",
           }),
