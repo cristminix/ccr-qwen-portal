@@ -437,7 +437,7 @@ export const registerApiRoutes: FastifyPluginAsync = async (
 
   const transformersWithEndpoint =
     fastify._server!.transformerService.getTransformersWithEndpoint()
-
+  console.log({ transformersWithEndpoint })
   for (const { transformer } of transformersWithEndpoint) {
     if (transformer.endPoint) {
       fastify.post(

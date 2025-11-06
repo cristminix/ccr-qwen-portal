@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Language Preference
+
+Please respond to all queries related to this repository in Indonesian language (Bahasa Indonesia).
+
 ## Commands
 
 -   **Build the project**:

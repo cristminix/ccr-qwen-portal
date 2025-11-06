@@ -5,7 +5,7 @@ import path from "node:path"
 import {
   CONFIG_FILE,
   DEFAULT_CONFIG,
-  HOME_DIR,
+  CONFIG_DIR,
   PLUGINS_DIR,
 } from "../constants"
 import { cleanupLogFiles } from "./logCleanup"
@@ -42,9 +42,9 @@ const ensureDir = async (dir_path: string) => {
 }
 
 export const initDir = async () => {
-  await ensureDir(HOME_DIR)
+  await ensureDir(CONFIG_DIR)
   await ensureDir(PLUGINS_DIR)
-  await ensureDir(path.join(HOME_DIR, "logs"))
+  await ensureDir(path.join(CONFIG_DIR, "logs"))
 }
 
 const createReadline = () => {
@@ -159,7 +159,7 @@ export const backupConfigFile = async () => {
 }
 
 export const writeConfigFile = async (config: any) => {
-  await ensureDir(HOME_DIR)
+  await ensureDir(CONFIG_DIR)
   const configWithComment = `${JSON.stringify(config, null, 2)}`
   await fs.writeFile(CONFIG_FILE, configWithComment)
 }

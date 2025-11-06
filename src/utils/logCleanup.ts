@@ -1,6 +1,6 @@
 import fs from "node:fs/promises"
 import path from "node:path"
-import { HOME_DIR } from "../constants"
+import { CONFIG_DIR } from "../constants"
 
 /**
  * Cleans up old log files, keeping only the most recent ones
@@ -8,7 +8,7 @@ import { HOME_DIR } from "../constants"
  */
 export async function cleanupLogFiles(maxFiles: number = 9): Promise<void> {
   try {
-    const logsDir = path.join(HOME_DIR, "logs")
+    const logsDir = path.join(CONFIG_DIR, "logs")
 
     // Check if logs directory exists
     try {

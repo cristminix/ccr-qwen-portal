@@ -10,14 +10,20 @@ import {
 } from "./utils/processCheck"
 import { version } from "../package.json"
 import { spawn, exec } from "child_process"
-import { PID_FILE, REFERENCE_COUNT_FILE } from "./constants"
+import {
+  APP_NAME,
+  CONFIG_FILE,
+  DEFAULT_PORT,
+  PID_FILE,
+  REFERENCE_COUNT_FILE,
+} from "./constants"
 import fs, { existsSync, readFileSync } from "fs"
 import { join } from "path"
 
 const command = process.argv[2]
 
 const HELP_TEXT = `
-Usage: ccr2 [command]
+Usage: ${APP_NAME} [command]
 
 Commands:
   start         Start server 
@@ -31,9 +37,9 @@ Commands:
   -h, help      Show help information
 
 Example:
-  ccr2 start
-  ccr2 code "Write a Hello World"
-  ccr2 ui
+  ${APP_NAME} start
+  ${APP_NAME} code "Write a Hello World"
+  ${APP_NAME} ui
 `
 
 async function waitForService(
@@ -139,7 +145,9 @@ async function main() {
           executeCodeCommand(codeArgs)
         } else {
           console.error(
-            "Service startup timeout, please manually run `ccr2 start` to start the service"
+            "Service startup timeout, please manually run `" +
+              APP_NAME +
+              " start` to start the service"
           )
           process.exit(1)
         }
@@ -191,12 +199,12 @@ async function main() {
 
             // Create a minimal default config file
             await writeConfigFile({
-              PORT: 4567,
+              PORT: DEFAULT_PORT,
               Providers: [],
               Router: {},
             })
             console.log(
-              "Created minimal default configuration file at ~/.custom-claude-code-router/config.json"
+              "Created minimal default configuration file at " + CONFIG_FILE
             )
             console.log("Please edit this file with your actual configuration.")
 
@@ -219,7 +227,9 @@ async function main() {
             if (!(await waitForService(15000))) {
               // Wait a bit longer for the first start
               console.error(
-                "Service startup still failing. Please manually run `ccr2 start` to start the service and check the logs."
+                "Service startup still failing. Please manually run `" +
+                  APP_NAME +
+                  " start` to start the service and check the logs."
               )
               process.exit(1)
             }
@@ -268,7 +278,7 @@ async function main() {
       break
     case "-v":
     case "version":
-      console.log(`claude-code-router version: ${version}`)
+      console.log(`${version}`)
       break
     case "restart":
       // Stop the service if it's running

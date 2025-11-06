@@ -1,18 +1,20 @@
 import path from "node:path"
 import os from "node:os"
 
-export const HOME_DIR = path.join(os.homedir(), ".custom-claude-code-router")
+export const CONFIG_DIR = path.join(process.cwd(), ".ccr")
 
-export const CONFIG_FILE = path.join(HOME_DIR, "config.json")
+export const CONFIG_FILE = path.join(CONFIG_DIR, "config.json")
 
-export const PLUGINS_DIR = path.join(HOME_DIR, "plugins")
+export const PLUGINS_DIR = path.join(CONFIG_DIR, "plugins")
 
-export const PID_FILE = path.join(HOME_DIR, ".custom-claude-code-router.pid")
-
+export const PID_FILE = path.join(CONFIG_DIR, ".ccr.pid")
+export const DEFAULT_PORT = 6789
+export const APP_NAME = "ccr"
 export const REFERENCE_COUNT_FILE = path.join(
-  os.tmpdir(),
-  "custom-claude-code-reference-count.txt"
+  CONFIG_DIR,
+  "ccr-reference-count.txt"
 )
+export const DEFAULT_LOG_FILE = path.join(CONFIG_DIR, "logs", "server.log")
 
 export const DEFAULT_CONFIG = {
   LOG: false,

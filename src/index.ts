@@ -1,15 +1,15 @@
 import { existsSync } from "fs"
 import { writeFile } from "fs/promises"
 import { homedir } from "os"
-import path, { join } from "path"
+import { join } from "path"
 import { initConfig, initDir, cleanupLogFiles } from "./utils"
 import { createServer } from "./server"
 import { router } from "./utils/router"
 import { apiKeyAuth } from "./middleware/auth"
 import { cleanupPidFile, isServiceRunning, savePid } from "./utils/processCheck"
-import { CONFIG_FILE } from "./constants"
+import { CONFIG_FILE, DEFAULT_LOG_FILE, DEFAULT_PORT } from "./constants"
 import createWriteStream from "pino-rotating-file-stream"
-import { HOME_DIR } from "./constants"
+import { CONFIG_DIR } from "./constants"
 import { configureLogging } from "./utils/log"
 import { sessionUsageCache } from "./utils/cache"
 import Stream from "node:stream"
@@ -61,7 +61,7 @@ async function run(options: RunOptions = {}) {
     console.warn("⚠️ API key is not set. HOST is forced to 127.0.0.1.")
   }
 
-  const port = config.PORT || 4567
+  const port = config.PORT || DEFAULT_PORT
 
   // Save the PID of the background process
   savePid(process.pid)
@@ -91,8 +91,9 @@ async function run(options: RunOptions = {}) {
       ? {
           level: config.LOG_LEVEL || "debug",
           stream: createWriteStream({
-            path: HOME_DIR,
-            filename: config.LOGNAME || `./logs/ccr2-${+new Date()}.log`,
+            path: CONFIG_DIR,
+            filename:
+              config.LOGNAME || `${CONFIG_DIR}/logs/-${+new Date()}.log`,
             maxFiles: 3,
             interval: "1d",
           }),
@@ -106,11 +107,7 @@ async function run(options: RunOptions = {}) {
       providers: config.Providers || config.providers,
       HOST: HOST,
       PORT: servicePort,
-      LOG_FILE: join(
-        homedir(),
-        ".claude-code-router",
-        "claude-code-router.log"
-      ),
+      LOG_FILE: DEFAULT_LOG_FILE,
     },
     logger: loggerConfig,
   })
