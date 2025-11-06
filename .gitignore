@@ -4,3 +4,7 @@ log.txt
 .idea
 dist
 .ccr/config.json
+
+.ccr/logs/*
+.ccr/*.log
+.ccr/*.pid
