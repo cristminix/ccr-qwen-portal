@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pwsh -File scripts/update-ccr-api-key.ps1)",
+      "Bash(where.exe pwsh)",
+      "Bash(powershell.exe -File scripts/update-ccr-api-key.ps1)",
+      "Bash(where.exe qwen)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

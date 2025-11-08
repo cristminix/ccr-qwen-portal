@@ -31,7 +31,8 @@ $TMP_FILE = "${CONFIG_FILE}.tmp"
 
 if (-not (Test-Path $CONFIG_FILE)) {
     Write-Warning "Configuration file not found: $CONFIG_FILE - Skipping update."
-} else {
+}
+else {
     Write-Host "Updating $CONFIG_FILE"
     $CONFIG_CONTENT = Get-Content -Path $CONFIG_FILE -Raw | ConvertFrom-Json
 
@@ -59,14 +60,15 @@ if (-not (Test-Path $CONFIG_FILE)) {
 }
 
 ################################################################################
-# 4–6. Replace the api_key inside the qwen-portal provider block for ~/.custom-claude-code-router/config.json
+# 4–6. Replace the api_key inside the qwen-portal provider block for ./.ccr/config.json
 ################################################################################
-$CONFIG_FILE = Join-Path $HOME ".custom-claude-code-router/config.json"
+$CONFIG_FILE = ".ccr/config.json"
 $TMP_FILE = "${CONFIG_FILE}.tmp"
 
 if (-not (Test-Path $CONFIG_FILE)) {
     Write-Warning "Configuration file not found: $CONFIG_FILE - Skipping update."
-} else {
+}
+else {
     Write-Host "Updating $CONFIG_FILE"
     $CONFIG_CONTENT = Get-Content -Path $CONFIG_FILE -Raw | ConvertFrom-Json
 

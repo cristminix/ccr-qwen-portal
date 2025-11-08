@@ -10,7 +10,7 @@ Please respond to all queries related to this repository in Indonesian language 
 
 -   **Build the project**:
     ```bash
-    npm run build
+    pnpm run build
     ```
 -   **Start the router server**:
     ```bash
@@ -30,7 +30,7 @@ Please respond to all queries related to this repository in Indonesian language 
     ```
 -   **Release a new version**:
     ```bash
-    npm run release
+    pnpm run release
     ```
 
 ## Architecture

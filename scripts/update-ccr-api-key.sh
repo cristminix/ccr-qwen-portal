@@ -27,7 +27,7 @@ echo "Updated $CONFIG_FILE"
 ################################################################################
 # 4–6. Replace the api_key inside the qwen-portal provider block
 ################################################################################
-CONFIG_FILE="$HOME/.custom-claude-code-router/config.json"
+CONFIG_FILE=".ccr/config.json"
 TMP_FILE="${CONFIG_FILE}.tmp"
 # Pull the old value for logging
 OLD_KEY=$(jq -r '.Providers[] | select(.name == "qwen-portal").api_key' "$CONFIG_FILE")
