@@ -2,7 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { CONFIG_DIR } from "../constants"
 
-const LOG_FILE = path.join(CONFIG_DIR, "claude-code-router.log")
+const LOG_FILE = path.join(CONFIG_DIR, "ccr.log")
 
 // Ensure log directory exists
 if (!fs.existsSync(CONFIG_DIR)) {
@@ -33,15 +33,14 @@ export function log(...args: any[]) {
   }
 
   const timestamp = new Date().toISOString()
-  const logMessage = `[${timestamp}] ${
-    Array.isArray(args)
+  const logMessage = `[${timestamp}] ${Array.isArray(args)
       ? args
-          .map((arg) =>
-            typeof arg === "object" ? JSON.stringify(arg) : String(arg)
-          )
-          .join(" ")
+        .map((arg) =>
+          typeof arg === "object" ? JSON.stringify(arg) : String(arg)
+        )
+        .join(" ")
       : ""
-  }\n`
+    }\n`
 
   // Append to log file
   fs.appendFileSync(LOG_FILE, logMessage, "utf8")
